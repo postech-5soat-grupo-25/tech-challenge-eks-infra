@@ -16,7 +16,6 @@ jobs:
       uses: actions/checkout@v4
     - name: Terraform Plan
       run: |
-        cd infra
         terraform init
         terraform validate
         terraform plan

@@ -1,53 +1,151 @@
-# IAM roles and policies
-resource "aws_iam_role" "eks_cluster_role" {
-  name               = "eks_cluster_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect    = "Allow",
-      Principal = {
-        Service = ["eks.amazonaws.com", "ec2.amazonaws.com"]  # Add ec2.amazonaws.com here
-      },
-      Action    = "sts:AssumeRole"
-    }]
-  })
+# IAM role for eks
+
+resource "aws_iam_role" "demo" {
+  name = "eks-cluster-demo"
+  tags = {
+    tag-key = "eks-cluster-demo"
+  }
+
+  assume_role_policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": [
+                    "eks.amazonaws.com"
+                ]
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+POLICY
 }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
-  role       = aws_iam_role.eks_cluster_role.name
+# eks policy attachment
+
+resource "aws_iam_role_policy_attachment" "demo-AmazonEKSClusterPolicy" {
+  role       = aws_iam_role.demo.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "eks_service_policy_attachment" {
-  role       = aws_iam_role.eks_cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-}
+# bare minimum requirement of eks
 
-# ECR repository
-resource "aws_ecr_repository" "my_repo" {
-  name = "my-repo"
-}
-
-# EKS Cluster
-resource "aws_eks_cluster" "my_cluster" {
-  name     = "my-cluster"
-  role_arn = aws_iam_role.eks_cluster_role.arn
+resource "aws_eks_cluster" "demo" {
+  name     = "demo"
+  role_arn = aws_iam_role.demo.arn
 
   vpc_config {
-    subnet_ids = ["subnet-0e2ae21c000fd47bc", "subnet-05d19d961d0178c60"]  # Subnet IDs in your VPC
-    security_group_ids = ["sg-0f96abeee5183e53c"]  # Security Group ID
+    subnet_ids = [
+      "subnet-0e2ae21c000fd47bc",
+      "subnet-05d19d961d0178c60"
+    ]
   }
+
+  depends_on = [aws_iam_role_policy_attachment.demo-AmazonEKSClusterPolicy]
 }
 
-# Node Group
-resource "aws_eks_node_group" "my_node_group" {
-  cluster_name    = aws_eks_cluster.my_cluster.name
-  node_group_name = "my-node-group"
-  node_role_arn   = aws_iam_role.eks_cluster_role.arn
-  subnet_ids = ["subnet-0e2ae21c000fd47bc", "subnet-05d19d961d0178c60"]  # Subnet IDs in your VPC
-  scaling_config {
-    desired_size = 2
-    max_size     = 3
-    min_size     = 1
-  }
+
+
+
+
+# role for nodegroup
+
+resource "aws_iam_role" "nodes" {
+  name = "eks-node-group-nodes"
+
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+    Version = "2012-10-17"
+  })
 }
+
+# IAM policy attachment to nodegroup
+
+resource "aws_iam_role_policy_attachment" "nodes-AmazonEKSWorkerNodePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.nodes.name
+}
+
+resource "aws_iam_role_policy_attachment" "nodes-AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.nodes.name
+}
+
+resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadOnly" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.nodes.name
+}
+
+
+# aws node group 
+
+resource "aws_eks_node_group" "private-nodes" {
+  cluster_name    = aws_eks_cluster.demo.name
+  node_group_name = "private-nodes"
+  node_role_arn   = aws_iam_role.nodes.arn
+
+    subnet_ids = [
+      "subnet-0e2ae21c000fd47bc",
+      "subnet-05d19d961d0178c60"
+    ]
+
+  capacity_type  = "ON_DEMAND"
+  instance_types = ["t2.medium"]
+
+  scaling_config {
+    desired_size = 1
+    max_size     = 10
+    min_size     = 0
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  labels = {
+    node = "kubenode02"
+  }
+
+  # taint {
+  #   key    = "team"
+  #   value  = "devops"
+  #   effect = "NO_SCHEDULE"
+  # }
+
+  # launch_template {
+  #   name    = aws_launch_template.eks-with-disks.name
+  #   version = aws_launch_template.eks-with-disks.latest_version
+  # }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.nodes-AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
+  ]
+}
+
+# launch template if required
+
+# resource "aws_launch_template" "eks-with-disks" {
+#   name = "eks-with-disks"
+
+#   key_name = "local-provisioner"
+
+#   block_device_mappings {
+#     device_name = "/dev/xvdb"
+
+#     ebs {
+#       volume_size = 50
+#       volume_type = "gp2"
+#     }
+#   }
+# }

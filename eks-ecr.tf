@@ -6,7 +6,7 @@ resource "aws_iam_role" "eks_cluster_role" {
     Statement = [{
       Effect    = "Allow",
       Principal = {
-        Service = "eks.amazonaws.com"
+        Service = ["eks.amazonaws.com", "ec2.amazonaws.com"]  # Add ec2.amazonaws.com here
       },
       Action    = "sts:AssumeRole"
     }]

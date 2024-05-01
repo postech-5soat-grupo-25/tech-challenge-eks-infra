@@ -1,56 +1,3 @@
-# IAM role for eks
-
-resource "aws_iam_role" "demo" {
-  name = "eks-cluster-demo"
-  tags = {
-    tag-key = "eks-cluster-demo"
-  }
-
-  assume_role_policy = <<POLICY
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Service": [
-                    "eks.amazonaws.com"
-                ]
-            },
-            "Action": "sts:AssumeRole"
-        }
-    ]
-}
-POLICY
-}
-
-# eks policy attachment
-
-resource "aws_iam_role_policy_attachment" "demo-AmazonEKSClusterPolicy" {
-  role       = aws_iam_role.demo.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
-
-# bare minimum requirement of eks
-
-resource "aws_eks_cluster" "demo" {
-  name     = "demo"
-  role_arn = aws_iam_role.demo.arn
-
-  vpc_config {
-    subnet_ids = [
-      "subnet-0e2ae21c000fd47bc",
-      "subnet-05d19d961d0178c60"
-    ]
-  }
-
-  depends_on = [aws_iam_role_policy_attachment.demo-AmazonEKSClusterPolicy]
-}
-
-
-
-
-
 # role for nodegroup
 
 resource "aws_iam_role" "nodes" {
@@ -93,10 +40,10 @@ resource "aws_eks_node_group" "private-nodes" {
   node_group_name = "private-nodes"
   node_role_arn   = aws_iam_role.nodes.arn
 
-    subnet_ids = [
-      "subnet-0e2ae21c000fd47bc",
-      "subnet-05d19d961d0178c60"
-    ]
+  subnet_ids = [
+    aws_subnet.private-us-east-1a.id,
+    aws_subnet.private-us-east-1b.id
+  ]
 
   capacity_type  = "ON_DEMAND"
   instance_types = ["t2.medium"]

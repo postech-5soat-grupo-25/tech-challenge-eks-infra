@@ -39,10 +39,10 @@ resource "aws_eks_cluster" "demo" {
 
   vpc_config {
     subnet_ids = [
-      aws_subnet.private-us-east-1a.id,
-      aws_subnet.private-us-east-1b.id,
-      aws_subnet.public-us-east-1a.id,
-      aws_subnet.public-us-east-1b.id
+      "subnet-08f8bcdb810e3e0ea",
+      "subnet-0cb5fc6b74bd7e2eb",
+      "subnet-0a0072f0b6788185e",
+      "subnet-084f1609a3253535e"
     ]
   }
 

@@ -15,7 +15,7 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "aws-terraform-state-storage"
+    bucket = "matheus-tf-state-bucket"
     key    = "infra-eks-ecr/terraform.tfstate"
     region = "us-east-1"
   }

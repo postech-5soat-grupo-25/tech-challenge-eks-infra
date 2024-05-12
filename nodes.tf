@@ -36,7 +36,7 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
 # aws node group 
 
 resource "aws_eks_node_group" "private-nodes" {
-  cluster_name    = aws_eks_cluster.demo.name
+  cluster_name    = aws_eks_cluster.tech_challenge_cluster.name
   node_group_name = "private-nodes"
   node_role_arn   = aws_iam_role.nodes.arn
 
@@ -62,16 +62,6 @@ resource "aws_eks_node_group" "private-nodes" {
     node = "kubenode02"
   }
 
-  # taint {
-  #   key    = "team"
-  #   value  = "devops"
-  #   effect = "NO_SCHEDULE"
-  # }
-
-  # launch_template {
-  #   name    = aws_launch_template.eks-with-disks.name
-  #   version = aws_launch_template.eks-with-disks.latest_version
-  # }
 
   depends_on = [
     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
@@ -79,20 +69,3 @@ resource "aws_eks_node_group" "private-nodes" {
     aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
   ]
 }
-
-# launch template if required
-
-# resource "aws_launch_template" "eks-with-disks" {
-#   name = "eks-with-disks"
-
-#   key_name = "local-provisioner"
-
-#   block_device_mappings {
-#     device_name = "/dev/xvdb"
-
-#     ebs {
-#       volume_size = 50
-#       volume_type = "gp2"
-#     }
-#   }
-# }

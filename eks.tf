@@ -1,9 +1,9 @@
 # IAM role for eks
 
-resource "aws_iam_role" "demo" {
-  name = "eks-cluster-demo"
+resource "aws_iam_role" "tech_challenge_cluster_role" {
+  name = "tech-challenge-eks-cluster"
   tags = {
-    tag-key = "eks-cluster-demo"
+    tag-key = "tech-challenge-eks-cluster"
   }
 
   assume_role_policy = <<POLICY
@@ -26,16 +26,16 @@ POLICY
 
 # eks policy attachment
 
-resource "aws_iam_role_policy_attachment" "demo-AmazonEKSClusterPolicy" {
-  role       = aws_iam_role.demo.name
+resource "aws_iam_role_policy_attachment" "tech_challenge_cluster_policy" {
+  role       = aws_iam_role.tech_challenge_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
 # bare minimum requirement of eks
 
-resource "aws_eks_cluster" "demo" {
-  name     = "demo"
-  role_arn = aws_iam_role.demo.arn
+resource "aws_eks_cluster" "tech_challenge_cluster" {
+  name     = "tech_challenge"
+  role_arn = aws_iam_role.tech_challenge_cluster_role.arn
 
   vpc_config {
     subnet_ids = [
@@ -46,5 +46,5 @@ resource "aws_eks_cluster" "demo" {
     ]
   }
 
-  depends_on = [aws_iam_role_policy_attachment.demo-AmazonEKSClusterPolicy]
+  depends_on = [aws_iam_role_policy_attachment.tech_challenge_cluster_policy]
 }

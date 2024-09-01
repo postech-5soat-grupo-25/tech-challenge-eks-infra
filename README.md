@@ -37,9 +37,9 @@ A destruição da infraestrutura pode ser iniciada manualmente através do GitHu
 
 ## Estrutura do Projeto
 
--	`backend.tf`: Configuração do backend do Terraform para armazenamento do estado e bloqueio.
--	`eks.tf`: Definição dos recursos da AWS para o EKS, incluindo cluster, nós, e integração com o IAM.
--	`variables.tf`: Variáveis utilizadas na configuração do Terraform.
--	`outputs.tf`: Saídas configuradas para fornecer informações úteis após o deploy.
+- `ecr.tf`: Configuração do Elastic Container Registry (ECR) para armazenamento de imagens Docker.
+- `eks.tf`: Definição dos recursos da AWS para o cluster EKS.
+- `network.tf`: Configuração da infraestrutura de rede, incluindo VPC e sub-redes.
+- `provider.tf`: Configuração do provedor AWS para uso com Terraform.
 -	`.github/workflows/deploy.yml`: Workflow do GitHub Actions para o deploy da infraestrutura.
 -	`.github/workflows/destroy.yml`: Workflow do GitHub Actions para a destruição da infraestrutura.

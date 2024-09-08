@@ -1,12 +1,11 @@
-name: Terraform Destroy
-on: workflow_dispatch
+name: '🧨 Terraform Backend Destroy'
+
+on:
+  workflow_dispatch:
+
 env:
   AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
   AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-  AWS_REGION: us-east-1
-  EKS_CLUSTER_NAME: tech-challenge
-  DJANGO_ECR_NAME: django_api
-  RUST_API_ECR_NAME: rust_api
 
 jobs:
   terraform_destroy:
@@ -24,10 +23,10 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{env.AWS_REGION}}
+        aws-region: ${{env.AWS_DEFAULT_REGION}}
 
     - name: Update kube config
-      run: aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+      run: aws eks update-kubeconfig --name ${{env.EKS_CLUSTER_NAME}} --region ${{env.AWS_DEFAULT_REGION}}
 
     - name: Clean Cluster
       run: |
@@ -39,8 +38,9 @@ jobs:
 
     - name: Clean ECR images
       run: |
-        aws ecr describe-images --repository-name $DJANGO_ECR_NAME --query 'imageDetails[*].[imageDigest]' --output text | xargs -I {} aws ecr batch-delete-image --repository-name $DJANGO_ECR_NAME --image-ids imageDigest={}
-        aws ecr describe-images --repository-name $RUST_API_ECR_NAME --query 'imageDetails[*].[imageDigest]' --output text | xargs -I {} aws ecr batch-delete-image --repository-name $RUST_API_ECR_NAME --image-ids imageDigest={}
+        aws ecr describe-images --repository-name ${{env.MOCK_PAGAMENTOS_ECR}} --query 'imageDetails[*].[imageDigest]' --output text | xargs -I {} aws ecr batch-delete-image --repository-name ${{env.MOCK_PAGAMENTOS_ECR}} --image-ids imageDigest={}
+        aws ecr describe-images --repository-name ${{env.PEDIDO_PRODUTO_API_ECR}} --query 'imageDetails[*].[imageDigest]' --output text | xargs -I {} aws ecr batch-delete-image --repository-name ${{env.PEDIDO_PRODUTO_API_ECR}} --image-ids imageDigest={}
+        aws ecr describe-images --repository-name ${{env.PAGAMENTOS_API_ECR}} --query 'imageDetails[*].[imageDigest]' --output text | xargs -I {} aws ecr batch-delete-image --repository-name ${{env.PAGAMENTOS_API_ECR}} --image-ids imageDigest={}
 
     - name: Terraform Destroy
       run: |

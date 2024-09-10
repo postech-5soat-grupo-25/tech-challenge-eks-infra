@@ -12,3 +12,8 @@ resource "aws_ecr_repository" "mock_pagamentos_api_repository" {
   name = "mock_pagamentos_api"
   image_tag_mutability = "MUTABLE" # Optional: Specify MUTABLE or IMMUTABLE
 }
+
+resource "aws_ecr_repository" "usuario_cliente_api_repository" {
+  name = "usuario_cliente_api"
+  image_tag_mutability = "MUTABLE" # Optional: Specify MUTABLE or IMMUTABLE
+}

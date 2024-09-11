@@ -15,7 +15,7 @@ module "eks" {
   }
 
   vpc_id     = "vpc-0b5e1e729d0b898eb"
-  subnet_ids = ["subnet-0a415ab2f2b03bf0a", "subnet-0eeeb1ae7b3a87560", "subnet-08217fefde1f7f9d9"]
+  subnet_ids = ["subnet-0b4a000eb73ee4c7d", "subnet-039d3894dca687df0", "subnet-0b301100af051caf3"]
 
   eks_managed_node_group_defaults = {
     ami_type = "AL2_x86_64"

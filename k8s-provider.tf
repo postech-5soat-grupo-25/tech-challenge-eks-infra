@@ -1,12 +1,29 @@
-data "aws_eks_cluster_auth" "cluster" {
-  name = aws_eks_cluster.cluster.name
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_name
+  depends_on = [module.eks]
 }
 
-# Provedor Kubernetes para o Terraform
-provider "kubernetes" {
-  host                   = aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(aws_eks_cluster.cluster.certificate_authority[0].data)
+data aws_eks_cluster_auth cluster {
+  name  = module.eks.cluster_name
+  depends_on = [module.eks]
+}
+
+provider kubernetes {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", data.aws_eks_cluster.cluster.name]
+      command     = "aws"
+    }
+  }
 }
 
 # Criar a política IAM para o Load Balancer Controller
@@ -14,7 +31,7 @@ resource "aws_iam_policy" "alb_controller_policy" {
   name        = "AWSLoadBalancerControllerIAMPolicy"
   description = "Policy for AWS Load Balancer Controller"
 
-  policy = file("iam_policy.json") # Baixe o arquivo JSON da política e salve no diretório do projeto
+  policy = file("./iam-policy.json")
 }
 
 # Criar um Role IAM para a ServiceAccount do Load Balancer Controller
@@ -63,17 +80,17 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   set {
     name  = "clusterName"
-    value = var.cluster_name
+    value = module.eks.cluster_name
   }
 
   set {
     name  = "region"
-    value = var.aws_region
+    value = "us-east-1"
   }
 
   set {
     name  = "vpcId"
-    value = aws_vpc.main.id
+    value = "vpc-0b5e1e729d0b898eb"
   }
 
   set {
@@ -84,61 +101,5 @@ resource "helm_release" "aws_load_balancer_controller" {
   set {
     name  = "serviceAccount.create"
     value = "false"
-  }
-}
-
-# Definir o Ingress no Kubernetes
-resource "kubernetes_ingress_v1" "example_ingress" {
-  metadata {
-    name      = "tech-challenge-ingress"
-    namespace = "default"
-    annotations = {
-      "alb.ingress.kubernetes.io/scheme"      = "internet-facing"
-      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\": 80}]"
-      "alb.ingress.kubernetes.io/target-type"  = "ip"
-      "alb.ingress.kubernetes.io/group.name"   = "my-api-ingress-group"
-    }
-  }
-
-  spec {
-    rule {
-      host = "pagamento.tech-challenge.com"
-
-      http {
-        path {
-          path     = "/"
-          path_type = "Prefix"
-
-          backend {
-            service {
-              name = "pagamentos-service"
-              port {
-                number = 80
-              }
-            }
-          }
-        }
-      }
-    }
-
-    rule {
-      host = "usuario-cliente.tech-challenge.com"
-
-      http {
-        path {
-          path     = "/"
-          path_type = "Prefix"
-
-          backend {
-            service {
-              name = "usuario-cliente-app-cluster-ip-svc"
-              port {
-                number = 80
-              }
-            }
-          }
-        }
-      }
-    }
   }
 }
